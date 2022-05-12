@@ -5,7 +5,7 @@ const request = require("request");
 const rp = require("request-promise");
 const VKBot = require("node-vk-bot-api");
 const body_parser = require("body-parser");
-const Markup = require("node-vk-bot-api/lib/markup")
+const Markup = require("node-vk-bot-api/lib/markup");
 
 const port = 5000;
 const app = express();
@@ -23,36 +23,54 @@ const bot = new VKBot({
 });
 app.post("/", bot.webhookCallback);
 
-bot.command("/start", (ctx) => {
-  ctx.reply("Для получения погоды введите название города", null);
+bot.command("Начало", (ctx) => {
+  ctx.reply(
+    "Для получения погоды введите название города",
+    null,
+    Markup.keyboard([
+      [Markup.button("Начало"), Markup.button("Помощь")],
+      [Markup.button("Москва")],
+    ]).oneTime()
+  );
+});
+
+bot.command("Помощь", (ctx) => {
+  ctx.reply(
+    "Данный бот предоставляет информацию о погоде в различных городах, попробуйте написать, например, Москва",
+    null,
+    Markup.keyboard([
+      [Markup.button("Начало"), Markup.button("Помощь")],
+      [Markup.button("Москва")],
+    ]).oneTime()
+  );
 });
 
 bot.on((ctx) => {
-   let city = ctx.message.text;
-   city = cyrillicToTranslit().transform(city, "_");
-   const url = `https://pogoda.mail.ru/prognoz/${city}`;
-   rp(url)
-     .then(function (html) {
-       const $ = cheerio.load(html);
-       let data = "";
-       $(
-         "body > div.g-layout.layout.layout_banner-side.js-module > div:nth-child(2) > div.block.block_forecast.block_index.forecast-rb-bg > div > div.information.block.js-city_one > div.information__content > div.information__content__wrapper.information__content__wrapper_left > a > div.information__content__additional.information__content__additional_temperature > div.information__content__temperature"
-       ).each((idx, elem) => {
-         const title = $(elem).text();
-         data = title;
-       });
-       ctx.reply(data);
-       $(
-         "body > div.g-layout.layout.layout_banner-side.js-module > div:nth-child(2) > div.block.block_forecast.block_index.forecast-rb-bg > div > div.information.block.js-city_one > div.information__content > div.information__content__wrapper.information__content__wrapper_left > a > div.information__content__additional.information__content__additional_first > div"
-       ).each((idx, elem) => {
-         const title = $(elem).text();
-         data = title;
-       });
-       ctx.reply(data);
-     })
-     .catch(function (err) {
-       console.error(err);
-     });
+  let city = ctx.message.text;
+  city = cyrillicToTranslit().transform(city, "_");
+  const url = `https://pogoda.mail.ru/prognoz/${city}`;
+  rp(url)
+    .then(function (html) {
+      const $ = cheerio.load(html);
+      let data = "";
+      $(
+        "body > div.g-layout.layout.layout_banner-side.js-module > div:nth-child(2) > div.block.block_forecast.block_index.forecast-rb-bg > div > div.information.block.js-city_one > div.information__content > div.information__content__wrapper.information__content__wrapper_left > a > div.information__content__additional.information__content__additional_temperature > div.information__content__temperature"
+      ).each((idx, elem) => {
+        const title = $(elem).text();
+        data = title;
+      });
+      ctx.reply(data);
+      $(
+        "body > div.g-layout.layout.layout_banner-side.js-module > div:nth-child(2) > div.block.block_forecast.block_index.forecast-rb-bg > div > div.information.block.js-city_one > div.information__content > div.information__content__wrapper.information__content__wrapper_left > a > div.information__content__additional.information__content__additional_first > div"
+      ).each((idx, elem) => {
+        const title = $(elem).text();
+        data = title;
+      });
+      ctx.reply(data);
+    })
+    .catch(function (err) {
+      console.error(err);
+    });
 });
 app.listen(port, function () {
   console.log(`Listen on port ${port}`);
